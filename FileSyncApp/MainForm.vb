@@ -9,6 +9,12 @@ Namespace FileSyncApp
 
         Private ReadOnly _mappings As List(Of PathMapping)
         Private ReadOnly _diffByNode As Dictionary(Of TreeNode, FileDifference)
+        Private ReadOnly _blockByItem As Dictionary(Of ListViewItem, LineBlock)
+        Private _activeDiff As FileDifference
+
+        Private txtSource As TextBox
+        Private btnAddSource As Button
+        Private btnRemoveSource As Button
 
         Private txtSource As TextBox
         Private btnAddSource As Button
@@ -25,6 +31,11 @@ Namespace FileSyncApp
         Private btnScan As Button
         Private btnSyncChecked As Button
         Private btnSyncAll As Button
+        Private btnApplySelectedBlocks As Button
+
+        Private rtbSource As RichTextBox
+        Private rtbTarget As RichTextBox
+        Private lvBlocks As ListView
 
         Private rtbSource As RichTextBox
         Private rtbTarget As RichTextBox
@@ -32,12 +43,15 @@ Namespace FileSyncApp
         Public Sub New()
             _mappings = New List(Of PathMapping)()
             _diffByNode = New Dictionary(Of TreeNode, FileDifference)()
+            _blockByItem = New Dictionary(Of ListViewItem, LineBlock)()
 
             InitializeComponent()
         End Sub
 
         Private Sub InitializeComponent()
             Me.Text = "Dateipfad-Synchronisation (VB8)"
+            Me.Width = 1380
+            Me.Height = 820
             Me.Width = 1280
             Me.Height = 780
             Me.StartPosition = FormStartPosition.CenterScreen
@@ -70,6 +84,13 @@ Namespace FileSyncApp
             btnAddSource.Top = 62
             btnAddSource.Width = 150
             AddHandler btnAddSource.Click, AddressOf AddSource_Click
+
+            btnRemoveSource = New Button()
+            btnRemoveSource.Text = "Quelle entfernen"
+            btnRemoveSource.Left = 170
+            btnRemoveSource.Top = 62
+            btnRemoveSource.Width = 150
+            AddHandler btnRemoveSource.Click, AddressOf RemoveSource_Click
 
             lstSources = New ListBox()
             lstSources.Left = 10
@@ -141,6 +162,7 @@ Namespace FileSyncApp
             leftPanel.Controls.Add(txtSource)
             leftPanel.Controls.Add(btnBrowseSource)
             leftPanel.Controls.Add(btnAddSource)
+            leftPanel.Controls.Add(btnRemoveSource)
             leftPanel.Controls.Add(lstSources)
             leftPanel.Controls.Add(lblTarget)
             leftPanel.Controls.Add(txtTarget)
@@ -155,11 +177,18 @@ Namespace FileSyncApp
             Dim splitMain As SplitContainer = New SplitContainer()
             splitMain.Dock = DockStyle.Fill
             splitMain.Orientation = Orientation.Horizontal
+            splitMain.SplitterDistance = 330
             splitMain.SplitterDistance = 350
 
             tvChanges = New TreeView()
             tvChanges.Dock = DockStyle.Fill
             AddHandler tvChanges.AfterSelect, AddressOf Changes_AfterSelect
+            splitMain.Panel1.Controls.Add(tvChanges)
+
+            Dim splitBottom As SplitContainer = New SplitContainer()
+            splitBottom.Dock = DockStyle.Fill
+            splitBottom.Orientation = Orientation.Vertical
+            splitBottom.SplitterDistance = 880
 
             splitMain.Panel1.Controls.Add(tvChanges)
 
