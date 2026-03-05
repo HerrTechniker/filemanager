@@ -15,6 +15,9 @@ Namespace FileSyncApp
         Private txtSource As TextBox
         Private btnAddSource As Button
         Private btnRemoveSource As Button
+
+        Private txtSource As TextBox
+        Private btnAddSource As Button
         Private btnBrowseSource As Button
         Private lstSources As ListBox
 
@@ -34,10 +37,14 @@ Namespace FileSyncApp
         Private rtbTarget As RichTextBox
         Private lvBlocks As ListView
 
+        Private rtbSource As RichTextBox
+        Private rtbTarget As RichTextBox
+
         Public Sub New()
             _mappings = New List(Of PathMapping)()
             _diffByNode = New Dictionary(Of TreeNode, FileDifference)()
             _blockByItem = New Dictionary(Of ListViewItem, LineBlock)()
+
             InitializeComponent()
         End Sub
 
@@ -45,6 +52,8 @@ Namespace FileSyncApp
             Me.Text = "Dateipfad-Synchronisation (VB8)"
             Me.Width = 1380
             Me.Height = 820
+            Me.Width = 1280
+            Me.Height = 780
             Me.StartPosition = FormStartPosition.CenterScreen
 
             Dim leftPanel As Panel = New Panel()
@@ -169,6 +178,7 @@ Namespace FileSyncApp
             splitMain.Dock = DockStyle.Fill
             splitMain.Orientation = Orientation.Horizontal
             splitMain.SplitterDistance = 330
+            splitMain.SplitterDistance = 350
 
             tvChanges = New TreeView()
             tvChanges.Dock = DockStyle.Fill
@@ -180,10 +190,12 @@ Namespace FileSyncApp
             splitBottom.Orientation = Orientation.Vertical
             splitBottom.SplitterDistance = 880
 
+            splitMain.Panel1.Controls.Add(tvChanges)
+
             Dim splitDiff As SplitContainer = New SplitContainer()
             splitDiff.Dock = DockStyle.Fill
             splitDiff.Orientation = Orientation.Vertical
-            splitDiff.SplitterDistance = 440
+            splitDiff.SplitterDistance = 450
 
             rtbSource = New RichTextBox()
             rtbSource.Dock = DockStyle.Fill
@@ -198,25 +210,7 @@ Namespace FileSyncApp
             splitDiff.Panel1.Controls.Add(rtbSource)
             splitDiff.Panel2.Controls.Add(rtbTarget)
 
-            lvBlocks = New ListView()
-            lvBlocks.Dock = DockStyle.Fill
-            lvBlocks.CheckBoxes = True
-            lvBlocks.View = View.Details
-            lvBlocks.FullRowSelect = True
-            lvBlocks.Columns.Add("Block", 120)
-            lvBlocks.Columns.Add("Vorschau", 320)
-
-            btnApplySelectedBlocks = New Button()
-            btnApplySelectedBlocks.Text = "Ausgewählte Blöcke übernehmen"
-            btnApplySelectedBlocks.Dock = DockStyle.Bottom
-            btnApplySelectedBlocks.Height = 36
-            AddHandler btnApplySelectedBlocks.Click, AddressOf ApplySelectedBlocks_Click
-
-            splitBottom.Panel1.Controls.Add(splitDiff)
-            splitBottom.Panel2.Controls.Add(lvBlocks)
-            splitBottom.Panel2.Controls.Add(btnApplySelectedBlocks)
-
-            splitMain.Panel2.Controls.Add(splitBottom)
+            splitMain.Panel2.Controls.Add(splitDiff)
 
             Me.Controls.Add(splitMain)
             Me.Controls.Add(leftPanel)
@@ -226,6 +220,7 @@ Namespace FileSyncApp
             If lstSources.SelectedIndex < 0 Then
                 Return Nothing
             End If
+
             Return CType(lstSources.SelectedItem, PathMapping)
         End Function
 
@@ -265,21 +260,6 @@ Namespace FileSyncApp
             lstSources.Items.Add(mapping)
             lstSources.SelectedItem = mapping
             txtSource.Clear()
-        End Sub
-
-        Private Sub RemoveSource_Click(ByVal sender As Object, ByVal e As EventArgs)
-            Dim mapping As PathMapping = CurrentMapping()
-            If mapping Is Nothing Then
-                Return
-            End If
-
-            _mappings.Remove(mapping)
-            lstSources.Items.Remove(mapping)
-            tvChanges.Nodes.Clear()
-            lvBlocks.Items.Clear()
-            rtbSource.Clear()
-            rtbTarget.Clear()
-            ReloadTargets()
         End Sub
 
         Private Sub Sources_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs)
@@ -343,8 +323,6 @@ Namespace FileSyncApp
         Private Sub Scan_Click(ByVal sender As Object, ByVal e As EventArgs)
             tvChanges.Nodes.Clear()
             _diffByNode.Clear()
-            _activeDiff = Nothing
-            lvBlocks.Items.Clear()
 
             Dim i As Integer
             For i = 0 To _mappings.Count - 1
@@ -365,8 +343,6 @@ Namespace FileSyncApp
         Private Sub SyncMappings(ByVal onlyChecked As Boolean)
             tvChanges.Nodes.Clear()
             _diffByNode.Clear()
-            _activeDiff = Nothing
-            lvBlocks.Items.Clear()
 
             Dim i As Integer
             For i = 0 To _mappings.Count - 1
@@ -421,88 +397,14 @@ Namespace FileSyncApp
         Private Sub Changes_AfterSelect(ByVal sender As Object, ByVal e As TreeViewEventArgs)
             Dim diff As FileDifference = Nothing
             If Not _diffByNode.TryGetValue(e.Node, diff) Then
-                _activeDiff = Nothing
                 rtbSource.Clear()
                 rtbTarget.Clear()
-                lvBlocks.Items.Clear()
                 Return
             End If
 
-            _activeDiff = diff
             Dim sourceText As String = ReadFileSafe(diff.SourceFile)
             Dim targetText As String = ReadFileSafe(diff.TargetFile)
             DiffUtil.HighlightDifferences(rtbSource, rtbTarget, sourceText, targetText)
-            LoadBlocksForDiff(diff)
-        End Sub
-
-        Private Sub LoadBlocksForDiff(ByVal diff As FileDifference)
-            lvBlocks.Items.Clear()
-            _blockByItem.Clear()
-
-            If Not SyncEngine.CanPartialSync(diff) Then
-                Dim info As ListViewItem = lvBlocks.Items.Add("Vollständige Datei")
-                info.SubItems.Add("Teil-Sync für diesen Dateityp nicht verfügbar.")
-                info.Checked = False
-                Return
-            End If
-
-            Dim blocks As List(Of LineBlock) = SyncEngine.BuildAddedBlocks(diff.SourceFile, diff.TargetFile)
-            Dim i As Integer
-            For i = 0 To blocks.Count - 1
-                Dim preview As String = String.Join(" ", blocks(i).Lines.ToArray())
-                If preview.Length > 80 Then
-                    preview = preview.Substring(0, 80) & "..."
-                End If
-
-                Dim item As ListViewItem = lvBlocks.Items.Add(blocks(i).ToString())
-                item.SubItems.Add(preview)
-                item.Checked = True
-                _blockByItem(item) = blocks(i)
-            Next
-
-            If blocks.Count = 0 Then
-                Dim info As ListViewItem = lvBlocks.Items.Add("Keine neuen Blöcke")
-                info.SubItems.Add("Inhalt unterscheidet sich, aber keine klaren neuen Zeilen gefunden.")
-                info.Checked = False
-            End If
-        End Sub
-
-        Private Sub ApplySelectedBlocks_Click(ByVal sender As Object, ByVal e As EventArgs)
-            If _activeDiff Is Nothing Then
-                MessageBox.Show(Me, "Bitte zuerst eine Datei im Änderungsbaum auswählen.")
-                Return
-            End If
-
-            If Not SyncEngine.CanPartialSync(_activeDiff) Then
-                Dim dr As DialogResult = MessageBox.Show(Me, "Für diese Datei ist nur Vollsynchronisierung möglich. Komplett synchronisieren?", "Hinweis", MessageBoxButtons.YesNo)
-                If dr = DialogResult.Yes Then
-                    SyncEngine.SyncFullFile(_activeDiff)
-                    MessageBox.Show(Me, "Datei vollständig synchronisiert.")
-                End If
-                Return
-            End If
-
-            Dim selectedBlocks As List(Of LineBlock) = New List(Of LineBlock)()
-            Dim i As Integer
-            For i = 0 To lvBlocks.Items.Count - 1
-                Dim item As ListViewItem = lvBlocks.Items(i)
-                If item.Checked AndAlso _blockByItem.ContainsKey(item) Then
-                    selectedBlocks.Add(_blockByItem(item))
-                End If
-            Next
-
-            If selectedBlocks.Count = 0 Then
-                MessageBox.Show(Me, "Bitte mindestens einen Block auswählen.")
-                Return
-            End If
-
-            SyncEngine.ApplySelectedBlocks(_activeDiff.SourceFile, _activeDiff.TargetFile, selectedBlocks)
-            MessageBox.Show(Me, "Ausgewählte Blöcke wurden in die Zieldatei übernommen.")
-
-            Dim sourceText As String = ReadFileSafe(_activeDiff.SourceFile)
-            Dim targetText As String = ReadFileSafe(_activeDiff.TargetFile)
-            DiffUtil.HighlightDifferences(rtbSource, rtbTarget, sourceText, targetText)
-            LoadBlocksForDiff(_activeDiff)
         End Sub
 
         Private Function ReadFileSafe(ByVal filePath As String) As String
