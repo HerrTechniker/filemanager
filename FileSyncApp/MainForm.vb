@@ -39,6 +39,8 @@ Namespace FileSyncApp
             _diffByNode = New Dictionary(Of TreeNode, FileDifference)()
             _blockByItem = New Dictionary(Of ListViewItem, LineBlock)()
             InitializeComponent()
+            AddHandler Me.Load, AddressOf MainForm_Load
+            AddHandler Me.FormClosing, AddressOf MainForm_FormClosing
         End Sub
 
         Private Sub InitializeComponent()
@@ -265,6 +267,7 @@ Namespace FileSyncApp
             lstSources.Items.Add(mapping)
             lstSources.SelectedItem = mapping
             txtSource.Clear()
+            SaveState()
         End Sub
 
         Private Sub RemoveSource_Click(ByVal sender As Object, ByVal e As EventArgs)
@@ -280,6 +283,7 @@ Namespace FileSyncApp
             rtbSource.Clear()
             rtbTarget.Clear()
             ReloadTargets()
+            SaveState()
         End Sub
 
         Private Sub Sources_SelectedIndexChanged(ByVal sender As Object, ByVal e As EventArgs)
@@ -328,6 +332,7 @@ Namespace FileSyncApp
             mapping.TargetPaths.Add(target)
             ReloadTargets()
             txtTarget.Clear()
+            SaveState()
         End Sub
 
         Private Sub RemoveTarget_Click(ByVal sender As Object, ByVal e As EventArgs)
@@ -338,6 +343,69 @@ Namespace FileSyncApp
 
             mapping.TargetPaths.Remove(CStr(lstTargets.SelectedItem))
             ReloadTargets()
+            SaveState()
+        End Sub
+
+        Private Sub MainForm_Load(ByVal sender As Object, ByVal e As EventArgs)
+            Dim state As AppState = AppStateStore.Load()
+            LoadState(state)
+        End Sub
+
+        Private Sub MainForm_FormClosing(ByVal sender As Object, ByVal e As FormClosingEventArgs)
+            SaveState()
+        End Sub
+
+        Private Sub LoadState(ByVal state As AppState)
+            _mappings.Clear()
+            lstSources.Items.Clear()
+            lstTargets.Items.Clear()
+
+            Dim i As Integer
+            For i = 0 To state.Mappings.Count - 1
+                Dim saved As PathMappingState = state.Mappings(i)
+                If saved.SourcePath Is Nothing OrElse saved.SourcePath.Length = 0 Then
+                    Continue For
+                End If
+
+                Dim mapping As PathMapping = New PathMapping(saved.SourcePath)
+                If saved.TargetPaths IsNot Nothing Then
+                    Dim j As Integer
+                    For j = 0 To saved.TargetPaths.Count - 1
+                        mapping.TargetPaths.Add(saved.TargetPaths(j))
+                    Next
+                End If
+
+                _mappings.Add(mapping)
+                lstSources.Items.Add(mapping)
+            Next
+
+            If lstSources.Items.Count > 0 Then
+                Dim idx As Integer = state.LastSelectedSourceIndex
+                If idx < 0 OrElse idx >= lstSources.Items.Count Then
+                    idx = 0
+                End If
+                lstSources.SelectedIndex = idx
+            End If
+        End Sub
+
+        Private Sub SaveState()
+            Dim state As AppState = New AppState()
+            Dim i As Integer
+            For i = 0 To _mappings.Count - 1
+                Dim mapping As PathMapping = _mappings(i)
+                Dim saved As PathMappingState = New PathMappingState()
+                saved.SourcePath = mapping.SourcePath
+
+                Dim j As Integer
+                For j = 0 To mapping.TargetPaths.Count - 1
+                    saved.TargetPaths.Add(mapping.TargetPaths(j))
+                Next
+
+                state.Mappings.Add(saved)
+            Next
+
+            state.LastSelectedSourceIndex = lstSources.SelectedIndex
+            AppStateStore.Save(state)
         End Sub
 
         Private Sub Scan_Click(ByVal sender As Object, ByVal e As EventArgs)

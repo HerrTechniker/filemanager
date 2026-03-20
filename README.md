@@ -4,6 +4,7 @@ Windows-Desktop-App zum Synchronisieren mehrerer Dateipfade:
 
 - Mehrere **Quellpfade** verwalten (hinzufügen/entfernen).
 - Für jede Quelle mehrere **Zielpfade** hinterlegen (hinzufügen/entfernen).
+- Letzte Quellen/Ziele werden automatisch gespeichert und beim nächsten Start wieder geladen.
 - Unterschiede (neu / geändert) als **TreeView** anzeigen.
 - Änderungen werden im TreeView **ordnerbasiert gruppiert** dargestellt (Ordner → Dateien).
 - Integrierter einfacher **Diff-Editor** (2 Textansichten mit Highlighting).
