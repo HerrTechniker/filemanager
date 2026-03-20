@@ -185,16 +185,6 @@ Namespace FileSyncApp
             Return File.ReadAllText(filePath).Replace(vbCrLf, vbLf).Split(ControlChars.Lf)
         End Function
 
-                Dim diff As FileDifference = differences(i)
-                Dim targetDir As String = Path.GetDirectoryName(diff.TargetFile)
-                If targetDir IsNot Nothing AndAlso targetDir.Length > 0 AndAlso Not Directory.Exists(targetDir) Then
-                    Directory.CreateDirectory(targetDir)
-                End If
-
-                File.Copy(diff.SourceFile, diff.TargetFile, True)
-            Next
-        End Sub
-
         Private Shared Function IsFileModified(ByVal sourceFile As String, ByVal targetFile As String) As Boolean
             Dim sourceInfo As FileInfo = New FileInfo(sourceFile)
             Dim targetInfo As FileInfo = New FileInfo(targetFile)
