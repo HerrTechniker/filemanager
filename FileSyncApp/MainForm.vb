@@ -401,12 +401,40 @@ Namespace FileSyncApp
                     Dim k As Integer
                     For k = 0 To differences.Count - 1
                         Dim diff As FileDifference = differences(k)
-                        Dim fileNode As TreeNode = targetNode.Nodes.Add(diff.ToString())
-                        _diffByNode(fileNode) = diff
+                        AddDifferenceTreeNode(targetNode, diff)
                     Next
                 End If
             Next
         End Sub
+
+        Private Sub AddDifferenceTreeNode(ByVal targetNode As TreeNode, ByVal diff As FileDifference)
+            Dim separators As Char() = New Char() {Path.DirectorySeparatorChar, Path.AltDirectorySeparatorChar}
+            Dim parts As String() = diff.RelativePath.Split(separators, StringSplitOptions.RemoveEmptyEntries)
+            If parts.Length = 0 Then
+                Return
+            End If
+
+            Dim currentNode As TreeNode = targetNode
+            Dim i As Integer
+            For i = 0 To parts.Length - 2
+                currentNode = FindOrCreateChildNode(currentNode, parts(i))
+            Next
+
+            Dim fileText As String = diff.Kind.ToString() & ": " & parts(parts.Length - 1)
+            Dim fileNode As TreeNode = currentNode.Nodes.Add(fileText)
+            _diffByNode(fileNode) = diff
+        End Sub
+
+        Private Function FindOrCreateChildNode(ByVal parent As TreeNode, ByVal text As String) As TreeNode
+            Dim i As Integer
+            For i = 0 To parent.Nodes.Count - 1
+                If String.Compare(parent.Nodes(i).Text, text, StringComparison.OrdinalIgnoreCase) = 0 Then
+                    Return parent.Nodes(i)
+                End If
+            Next
+
+            Return parent.Nodes.Add(text)
+        End Function
 
         Private Function IsTargetSelected(ByVal target As String) As Boolean
             Dim i As Integer
