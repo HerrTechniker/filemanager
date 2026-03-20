@@ -23,3 +23,7 @@ Windows-Desktop-App zum Synchronisieren mehrerer Dateipfade:
 ```bash
 dotnet build FileSyncApp.sln
 ```
+
+## Hinweis zu BC30420 (Sub Main nicht gefunden)
+
+Wenn `StartupObject` auf `FileSyncApp.Program` zeigt, darf der Projekt-`RootNamespace` nicht zusätzlich denselben Namespace voranstellen. Deshalb ist `RootNamespace` bewusst leer gesetzt.
