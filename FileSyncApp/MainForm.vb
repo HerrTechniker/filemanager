@@ -409,28 +409,18 @@ Namespace FileSyncApp
         End Sub
 
         Private Sub Scan_Click(ByVal sender As Object, ByVal e As EventArgs)
-            tvChanges.Nodes.Clear()
-            _diffByNode.Clear()
-            _activeDiff = Nothing
-            lvBlocks.Items.Clear()
-
-            Dim i As Integer
-            For i = 0 To _mappings.Count - 1
-                AddSourceNode(_mappings(i), False)
-            Next
-
-            tvChanges.ExpandAll()
+            SyncMappings(False, False)
         End Sub
 
         Private Sub SyncChecked_Click(ByVal sender As Object, ByVal e As EventArgs)
-            SyncMappings(True)
+            SyncMappings(True, True)
         End Sub
 
         Private Sub SyncAll_Click(ByVal sender As Object, ByVal e As EventArgs)
-            SyncMappings(False)
+            SyncMappings(True, False)
         End Sub
 
-        Private Sub SyncMappings(ByVal onlyChecked As Boolean)
+        Private Sub SyncMappings(ByVal doSync As Boolean, ByVal onlyChecked As Boolean)
             tvChanges.Nodes.Clear()
             _diffByNode.Clear()
             _activeDiff = Nothing
@@ -438,21 +428,23 @@ Namespace FileSyncApp
 
             Dim i As Integer
             For i = 0 To _mappings.Count - 1
-                AddSourceNode(_mappings(i), onlyChecked)
+                AddSourceNode(_mappings(i), doSync, onlyChecked)
             Next
 
             tvChanges.ExpandAll()
-            MessageBox.Show(Me, "Synchronisierung abgeschlossen.")
+            If doSync Then
+                MessageBox.Show(Me, "Synchronisierung abgeschlossen.")
+            End If
         End Sub
 
-        Private Sub AddSourceNode(ByVal mapping As PathMapping, ByVal sync As Boolean)
+        Private Sub AddSourceNode(ByVal mapping As PathMapping, ByVal doSync As Boolean, ByVal onlyChecked As Boolean)
             Dim sourceNode As TreeNode = tvChanges.Nodes.Add(mapping.SourcePath)
             sourceNode.NodeFont = New Drawing.Font(tvChanges.Font, Drawing.FontStyle.Bold)
 
             Dim j As Integer
             For j = 0 To mapping.TargetPaths.Count - 1
                 Dim target As String = mapping.TargetPaths(j)
-                If sync AndAlso Not IsTargetSelected(target) Then
+                If onlyChecked AndAlso Not IsTargetSelected(target) Then
                     Continue For
                 End If
 
@@ -462,7 +454,7 @@ Namespace FileSyncApp
                 If differences.Count = 0 Then
                     targetNode.Nodes.Add("Keine Änderungen")
                 Else
-                    If sync Then
+                    If doSync Then
                         SyncEngine.SyncDifferences(differences)
                     End If
 
