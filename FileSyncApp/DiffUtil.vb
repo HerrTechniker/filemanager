@@ -40,6 +40,23 @@ Namespace FileSyncApp
             rightBox.SelectionLength = 0
         End Sub
 
+        Public Shared Sub RenderLineNumbers(ByVal numberBox As RichTextBox, ByVal text As String)
+            Dim normalized As String = text.Replace(vbCrLf, vbLf)
+            Dim lines As String() = normalized.Split(ControlChars.Lf)
+
+            Dim builder As System.Text.StringBuilder = New System.Text.StringBuilder()
+            Dim i As Integer
+            For i = 0 To lines.Length - 1
+                builder.Append((i + 1).ToString())
+                If i < lines.Length - 1 Then
+                    builder.AppendLine()
+                End If
+            Next
+
+            numberBox.Text = builder.ToString()
+            numberBox.SelectionLength = 0
+        End Sub
+
         Private Shared Sub HighlightLine(ByVal box As RichTextBox, ByVal line As Integer, ByVal backColor As Color)
             If line < 0 OrElse line >= box.Lines.Length Then
                 Return

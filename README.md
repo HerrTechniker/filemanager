@@ -8,6 +8,7 @@ Windows-Desktop-App zum Synchronisieren mehrerer Dateipfade:
 - Unterschiede (neu / geändert) als **TreeView** anzeigen.
 - Änderungen werden im TreeView **ordnerbasiert gruppiert** dargestellt (Ordner → Dateien).
 - Integrierter einfacher **Diff-Editor** (2 Textansichten mit Highlighting).
+- Beide Diff-Ansichten besitzen links eine **Zeilennummern-Spalte**.
 - **Blockweise Synchronisation** für Textdateien:
   - Datei im TreeView auswählen
   - erkannte neue Blöcke (ähnlich Hunk-Auswahl) in Liste prüfen

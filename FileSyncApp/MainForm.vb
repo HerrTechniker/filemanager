@@ -32,6 +32,8 @@ Namespace FileSyncApp
 
         Private rtbSource As RichTextBox
         Private rtbTarget As RichTextBox
+        Private rtbSourceLines As RichTextBox
+        Private rtbTargetLines As RichTextBox
         Private lvBlocks As ListView
 
         Public Sub New()
@@ -187,18 +189,46 @@ Namespace FileSyncApp
             splitDiff.Orientation = Orientation.Vertical
             splitDiff.SplitterDistance = 440
 
+            Dim sourceContainer As Panel = New Panel()
+            sourceContainer.Dock = DockStyle.Fill
+
+            rtbSourceLines = New RichTextBox()
+            rtbSourceLines.Dock = DockStyle.Left
+            rtbSourceLines.Width = 55
+            rtbSourceLines.ReadOnly = True
+            rtbSourceLines.WordWrap = False
+            rtbSourceLines.ScrollBars = RichTextBoxScrollBars.None
+            rtbSourceLines.BackColor = Drawing.Color.Gainsboro
+
             rtbSource = New RichTextBox()
             rtbSource.Dock = DockStyle.Fill
             rtbSource.ReadOnly = True
             rtbSource.WordWrap = False
+
+            sourceContainer.Controls.Add(rtbSource)
+            sourceContainer.Controls.Add(rtbSourceLines)
+
+            Dim targetContainer As Panel = New Panel()
+            targetContainer.Dock = DockStyle.Fill
+
+            rtbTargetLines = New RichTextBox()
+            rtbTargetLines.Dock = DockStyle.Left
+            rtbTargetLines.Width = 55
+            rtbTargetLines.ReadOnly = True
+            rtbTargetLines.WordWrap = False
+            rtbTargetLines.ScrollBars = RichTextBoxScrollBars.None
+            rtbTargetLines.BackColor = Drawing.Color.Gainsboro
 
             rtbTarget = New RichTextBox()
             rtbTarget.Dock = DockStyle.Fill
             rtbTarget.ReadOnly = True
             rtbTarget.WordWrap = False
 
-            splitDiff.Panel1.Controls.Add(rtbSource)
-            splitDiff.Panel2.Controls.Add(rtbTarget)
+            targetContainer.Controls.Add(rtbTarget)
+            targetContainer.Controls.Add(rtbTargetLines)
+
+            splitDiff.Panel1.Controls.Add(sourceContainer)
+            splitDiff.Panel2.Controls.Add(targetContainer)
 
             lvBlocks = New ListView()
             lvBlocks.Dock = DockStyle.Fill
@@ -512,6 +542,8 @@ Namespace FileSyncApp
                 _activeDiff = Nothing
                 rtbSource.Clear()
                 rtbTarget.Clear()
+                rtbSourceLines.Clear()
+                rtbTargetLines.Clear()
                 lvBlocks.Items.Clear()
                 Return
             End If
@@ -520,6 +552,8 @@ Namespace FileSyncApp
             Dim sourceText As String = ReadFileSafe(diff.SourceFile)
             Dim targetText As String = ReadFileSafe(diff.TargetFile)
             DiffUtil.HighlightDifferences(rtbSource, rtbTarget, sourceText, targetText)
+            DiffUtil.RenderLineNumbers(rtbSourceLines, sourceText)
+            DiffUtil.RenderLineNumbers(rtbTargetLines, targetText)
             LoadBlocksForDiff(diff)
         End Sub
 
@@ -590,6 +624,8 @@ Namespace FileSyncApp
             Dim sourceText As String = ReadFileSafe(_activeDiff.SourceFile)
             Dim targetText As String = ReadFileSafe(_activeDiff.TargetFile)
             DiffUtil.HighlightDifferences(rtbSource, rtbTarget, sourceText, targetText)
+            DiffUtil.RenderLineNumbers(rtbSourceLines, sourceText)
+            DiffUtil.RenderLineNumbers(rtbTargetLines, targetText)
             LoadBlocksForDiff(_activeDiff)
         End Sub
 
